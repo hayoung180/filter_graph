@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "chart.js": "^4.3.3",
+    "echarts": "^5.4.3",
+    "install": "^0.13.0",
+    "npm": "^9.8.1",
+    "plotly.js": "^2.25.2"
+  }
+}

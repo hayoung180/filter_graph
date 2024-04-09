@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Chart Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+</head>
+<style>
+    /* 박스 스타일 */
+    .box {
+        border: 2px solid #ccc;
+        padding: 10px 10px 10px 30px;
+        margin: 20px;
+        border-radius: 5px;
+    }
+
+    .ongraph_box {
+        width: 250px;
+        height: 150px;
+        padding: 10px 10px 0px 30px;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: 1px solid white; /* 흰색 테두리 추가 */
+        font-weight: bold;
+        border-radius: 10px; /* 모서리 둥글게 */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* 그림자 효과 추가 */
+    }
+
+    /* 입력 요소 스타일 */
+    label {
+        font-weight: bold;
+    }
+
+    input[type="text"] {
+        width: 100px;
+        padding: 5px;
+        margin-right: 10px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+    }
+
+    /* 버튼 스타일 */
+    button {
+        padding: 5px 10px;
+        background-color: #7A7A7A;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    /* 버튼 호버 효과 */
+    button:hover {
+        background-color: #0056b3;
+    }
+</style>
+<body style="position: relative;">
+    <div class="box">
+        <p>
+            <label for="startTilt">Start Tilt Degree:</label>
+            <input type="text" id="startTilt" value="">
+            <label for="endTilt">End Tilt Degree:</label>
+            <input type="text" id="endTilt" value="">
+        </p>
+
+        <p>
+            <label for="startDirection">Start Direction Degree:</label>
+            <input type="text" id="startDirection" value="">
+            <label for="endDirection">End Direction Degree:</label>
+            <input type="text" id="endDirection" value="">
+            <button id="applyButton">Apply</button>
+        </p>
+    </div>
+
+    <canvas id="chart" width="800" height="400" style="position: relative;"></canvas>
+    
+    <div class="ongraph_box" style="position: absolute; top: 250px; left: 130px;">
+        <p>Current Time: <span id="currentTime">-</span></p>
+        <p>Tilt Degree: <span id="tiltDegree">-</span></p>
+        <p>Direction Degree: <span id="directionDegree">-</span></p>
+    </div>
+
+    <script>
+        const startTiltInput = document.getElementById('startTilt');
+        const endTiltInput = document.getElementById('endTilt');
+        const startDirectionInput = document.getElementById('startDirection');
+        const endDirectionInput = document.getElementById('endDirection');
+        const applyButton = document.getElementById('applyButton');
+        
+        const currentTimeSpan = document.getElementById('currentTime');
+        const tiltDegreeSpan = document.getElementById('tiltDegree');
+        const directionDegreeSpan = document.getElementById('directionDegree');
+        
+        let now = ''; // 현재 'env_time' 값을 저장할 변수
+        let now_tilt = '';
+        let now_direction = '';
+        
+        let start_tilt_degree = ''; // 시작 틸트 각도 값을 저장할 변수
+        let end_tilt_degree = ''; // 종료 틸트 각도 값을 저장할 변수
+        let start_direction_degree = ''; // 시작 틸트 각도 값을 저장할 변수
+        let end_direction_degree = ''; // 종료 틸트 각도 값을 저장할 변수
+
+        let chart = null;
+
+        function updateCurrentTime() {
+            currentTimeSpan.textContent = now;
+            tiltDegreeSpan.textContent = now_tilt;
+            directionDegreeSpan.textContent = now_direction;
+        }
+        
+        fetch('/data')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('chart').getContext('2d');
+
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.env_time,
+                        datasets: [
+                            {
+                                label: 'env_levelsolar',
+                                data: data.env_levelsolar,
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'env_slopesolar',
+                                data: data.env_slopesolar,
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                borderWidth: 1,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'env_modtemp',
+                                data: data.env_modtemp,
+                                type: 'line', // 선 그래프 유형
+                                borderColor: 'rgba(255, 159, 64, 1)',
+                                borderWidth: 1,
+                                fill: false, // 선 그래프를 채우지 않음
+                                yAxisID: 'y1',
+                            },
+                            {
+                                label: 'env_airtemp',
+                                data: data.env_airtemp,
+                                type: 'line', // 선 그래프 유형
+                                borderColor: 'rgba(150, 159, 255, 1)',
+                                borderWidth: 1,
+                                fill: false, // 선 그래프를 채우지 않음
+                                yAxisID: 'y1',
+                            },
+                            {
+                                label: 'predict',
+                                data: data.predict,
+                                type: 'line', // 선 그래프 유형
+                                borderColor: 'rgba(34, 183, 64, 1)',
+                                borderWidth: 1,
+                                fill: false, // 선 그래프를 채우지 않음
+                                yAxisID: 'y2',
+                            },
+                        ],
+                    },
+                    options: {
+                        onHover: function(event, elements) {
+                            if (elements && elements.length > 0) {
+                                const index = elements[0].index;
+                                now = data.env_time[index]; // 'env_time' 값을 변수에 저장
+                                now_tilt = data.env_tilt_degree[index];
+                                now_direction = data.env_direction_degree[index];
+
+                                updateCurrentTime();
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                suggestedMin: 0,
+                                suggestedMax: 50,
+                                // grid line settings
+                                grid: {
+                                    // only want the grid lines for one axis to show up
+                                    drawOnChartArea: false,
+                                }
+                            },
+                            y2: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                suggestedMin: 0,
+                                suggestedMax: 2000,
+                                // grid line settings
+                                grid: {
+                                    // only want the grid lines for one axis to show up
+                                    drawOnChartArea: false,
+                                }
+                            }
+                        },
+                    },
+                });
+
+            })
+            .catch(error => console.error('Error fetching data:', error));
+            
+            applyButton.addEventListener('click', () => {
+                    start_tilt_degree = parseFloat(startTiltInput.value) || 0;
+                    end_tilt_degree = parseFloat(endTiltInput.value) || 180;
+                    start_direction_degree = parseFloat(startDirectionInput.value) || 0;
+                    end_direction_degree = parseFloat(endDirectionInput.value) || 360;
+
+                    const requestData = {
+                        start_tilt: start_tilt_degree,
+                        end_tilt: end_tilt_degree,
+                        start_direction: start_direction_degree,
+                        end_direction: end_direction_degree,
+                    };
+
+                    // 서버에 POST 요청을 보냄
+                    fetch('/filter_data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestData)
+                    })
+                    .then(response =>{
+                        return response.json()})
+                    .then(filteredData => {
+                        // 서버에서 받은 필터링된 데이터로 차트 업데이트
+                        chart.data.labels = filteredData.env_time;
+                        chart.data.datasets[0].data = filteredData.env_levelsolar;
+                        chart.data.datasets[1].data = filteredData.env_slopesolar;
+                        chart.data.datasets[2].data = filteredData.env_modtemp;
+                        chart.data.datasets[3].data = filteredData.env_airtemp;
+                        chart.data.datasets[4].data = filteredData.predict;
+
+                        chart.update(); // 차트 업데이트
+
+                         // onHover 부분 업데이트
+                        chart.options.onHover = function(event, elements) {
+                            if (elements && elements.length > 0) {
+                                const index = elements[0].index;
+                                now = filteredData.env_time[index]; // 'env_time' 값을 변수에 저장
+                                now_tilt = filteredData.env_tilt_degree[index];
+                                now_direction = filteredData.env_direction_degree[index];
+                                updateCurrentTime();
+                            }
+                        };
+                    })
+                    .catch(error => {
+                        console.error('Error sending data to server:', error);
+                    });
+                });
+
+                
+                
+    </script>
+</body>
+</html>
